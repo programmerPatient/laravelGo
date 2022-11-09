@@ -1,0 +1,76 @@
+/*
+ * @Description:
+ * @Author: mali
+ * @Date: 2022-09-20 15:15:01
+ * @LastEditTime: 2022-09-21 15:20:18
+ * @LastEditors: VSCode
+ * @Reference:
+ */
+package job
+
+import (
+	"context"
+	"encoding/json"
+	"time"
+
+	"github.com/hibiken/asynq"
+	"github.com/laravelGo/core/logger"
+)
+
+//任务名
+const {{StructName}}JobName = "{{TableName}}"
+type {{StructName}}Job struct {
+	Name     string          //任务名
+	Opts     []asynq.Option  //Opts请自行参考asynq.Option参数用处
+	Playload interface{}     //任务数据
+}
+
+//参数 可以自行替换自己的结构
+type {{StructName}}Payload struct {
+	UserId int
+}
+
+func init() {
+	AddJobNameToHandle({{StructName}}JobName, (&{{StructName}}Job{}).Handle())
+}
+
+//新建任务
+func New{{StructName}}Job(playload interface{}) *{{StructName}}Job {
+	return &{{StructName}}Job{
+		Name:     {{StructName}}JobName,
+		Playload: playload,
+		Opts: []asynq.Option{
+            asynq.Queue("criticals"),         //选择的队列,暂时支持 critical default low,自定义的队列请加入config下的asyng的queue内规定优先级 
+				"default":  2,
+				"low":      1,
+			asynq.ProcessIn(10 * time.Second),//代表10s后再处理
+		},
+	}
+}
+
+//任务名
+func (job *{{StructName}}Job) GetName() string {
+	return {{StructName}}JobName
+}
+
+//参数
+func (job *{{StructName}}Job) GetPayload() interface{} {
+	return job.Playload
+}
+
+//任务处理行为
+func (job *{{StructName}}Job) GetOpt() []asynq.Option {
+	return job.Opts
+}
+
+//处理函数
+func (job *{{StructName}}Job) Handle() func(ctx context.Context, t *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		var p {{StructName}}Payload
+		if err := json.Unmarshal(t.Payload(), &p); err != nil {
+			logger.Dump(err.Error())
+		}
+		logger.Dump(p)
+		return nil
+	}
+}

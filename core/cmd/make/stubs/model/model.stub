@@ -1,0 +1,13 @@
+package {{PackageName}}
+
+type {{StructName}} struct {
+    BaseModel
+    // 替换成具体的结构
+    FIXME()
+    CommonTimestampsField
+}
+
+// 自定义表名
+func ({{StructName}}) TableName() string {
+	return "{{TableName}}"
+}
