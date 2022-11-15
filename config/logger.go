@@ -2,7 +2,7 @@
  * @Description:日志配置
  * @Author: mali
  * @Date: 2022-09-08 15:33:28
- * @LastEditTime: 2022-09-08 16:53:34
+ * @LastEditTime: 2022-11-15 17:38:45
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -22,9 +22,8 @@ func init() {
 			// 开发时推荐使用 "debug" 或者 "info" ，生产环境下使用 "error"
 			"level": config.Env("LOG_LEVEL", "debug"),
 			//日志类型
-			//dail y—— 按天
-			//month —— 按月
-			//single ——— 一个独立文件
+			//dail y—— 按天自动分割
+			//single ——— 一个独立文件（默认为按大小分割）
 			"type": config.Env("LOG_TYPE", "single"),
 			/* ------------------ 滚动日志配置 ------------------ */
 			// 日志文件路径

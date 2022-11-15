@@ -2,7 +2,7 @@
  * @Description:日志系统
  * @Author: mali
  * @Date: 2022-09-08 13:37:31
- * @LastEditTime: 2022-09-13 09:19:36
+ * @LastEditTime: 2022-11-15 17:38:30
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -11,9 +11,6 @@ package logger
 import (
 	"fmt"
 	"os"
-	"path"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/laravelGo/core/app"
@@ -120,27 +117,29 @@ func customTimeEncoderfunc(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
  * @param {string} logType
  */
 func getLoggerWrite(pathname string, maxSize, maxBackup, maxAge int, compress bool, logType string) zapcore.WriteSyncer {
-	//获取文件名
-	_, fileName := filepath.Split(pathname)
-	//获取文件后缀
-	ext := path.Ext(pathname)
-	//日志文件记录分类
-	if logType == "daily" {
-		//按天分类
-		logname := time.Now().Format("2006/01/02" + ext)
-		pathname = strings.ReplaceAll(pathname, fileName, logname)
-	}
-	if logType == "month" {
-		//按月分类
-		logname := time.Now().Format("2006/01" + ext)
-		pathname = strings.ReplaceAll(pathname, fileName, logname)
-	}
 	loggerWrite := &lumberjack.Logger{
 		Filename:   pathname,  //文件名
 		MaxSize:    maxSize,   //日志单文件的最大占用空间
 		MaxAge:     maxAge,    //已经被分割存储的日志文件最大的留存时间，单位是天
 		MaxBackups: maxBackup, //分割存储的日志文件最多的留存个数
 		Compress:   compress,  //指定被分割之后的文件是否要压缩
+	}
+
+	//每日零点定时日志回滚分割实现时间上的分割
+	if logType == "daily" {
+		go func() {
+			for {
+				nowTime := time.Now()
+				nowTimeStr := nowTime.Format("2006-01-02")
+				//使用Parse 默认获取为UTC时区 需要获取本地时区 所以使用ParseInLocation
+				t2, _ := time.ParseInLocation("2006-01-02", nowTimeStr, time.Local)
+				// 第二天零点时间戳
+				next := t2.AddDate(0, 0, 1)
+				after := next.UnixNano() - nowTime.UnixNano() - 1
+				<-time.After(time.Duration(after) * time.Nanosecond)
+				loggerWrite.Rotate()
+			}
+		}()
 	}
 
 	// 配置输出介质
