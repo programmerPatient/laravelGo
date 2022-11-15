@@ -2,7 +2,7 @@
  * @Description: 捕获异常中间价
  * @Author: mali
  * @Date: 2022-09-08 17:05:02
- * @LastEditTime: 2022-09-08 17:08:21
+ * @LastEditTime: 2022-11-15 14:30:40
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -43,6 +43,7 @@ func Recovery() gin.HandlerFunc {
 				// 链接中断的情况
 				if brokenPipe {
 					logger.Error(c.Request.URL.Path,
+						zap.String("request_id", c.GetString("request_id")), //用于链路追踪使用
 						zap.Time("time", time.Now()),
 						zap.Any("error", err),
 						zap.String("request", string(httpRequest)),
@@ -54,10 +55,11 @@ func Recovery() gin.HandlerFunc {
 				}
 				// 如果不是链接中断，就开始记录堆栈信息
 				logger.Error("recovery from panic",
-					zap.Time("time", time.Now()),               //记录时间
-					zap.Any("error", err),                      //记录错误信息
-					zap.String("request", string(httpRequest)), //请求信息
-					zap.Stack("stacktrace"),                    //调用堆栈信息
+					zap.String("request_id", c.GetString("request_id")), //用于链路追踪使用
+					zap.Time("time", time.Now()),                        //记录时间
+					zap.Any("error", err),                               //记录错误信息
+					zap.String("request", string(httpRequest)),          //请求信息
+					zap.Stack("stacktrace"),                             //调用堆栈信息
 				)
 				// 返回 500 状态码
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{

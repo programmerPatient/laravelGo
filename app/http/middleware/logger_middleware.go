@@ -2,7 +2,7 @@
  * @Description:gin全局的请求中间件
  * @Author: mali
  * @Date: 2022-09-08 17:00:13
- * @LastEditTime: 2022-11-08 11:03:37
+ * @LastEditTime: 2022-11-15 14:32:37
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/laravelGo/app/helper"
 	"github.com/laravelGo/core/logger"
 	"github.com/spf13/cast"
@@ -48,6 +49,8 @@ func Logger() gin.HandlerFunc {
 		}
 		// 设置开始时间
 		start := time.Now()
+		//用于链路追踪使用
+		c.Set("request_id", uuid.New().String())
 		//执行后续操作
 		c.Next()
 
@@ -58,12 +61,13 @@ func Logger() gin.HandlerFunc {
 		responStatus := c.Writer.Status()
 		//日志格式
 		logFields := []zap.Field{
+			zap.String("request_id", c.GetString("request_id")),                //用于链路追踪使用
 			zap.Int("status", responStatus),                                    //状态
 			zap.String("time", helper.MicrosecondsStr(cost)),                   //执行时间
 			zap.String("request", c.Request.Method+" "+c.Request.URL.String()), //请求的method和url
 			zap.String("query", c.Request.URL.RawQuery),                        //请求的参数
 			zap.String("ip", c.ClientIP()),                                     //客户端ip
-			zap.String("request body", string(requestBody)),
+			zap.String("request_body", string(requestBody)),
 			zap.String("errors", c.Errors.ByType(gin.ErrorTypePrivate).String()), //gin报错日志详情
 		}
 		//日志添加头部信息
@@ -73,7 +77,7 @@ func Logger() gin.HandlerFunc {
 		//对数据有影响的操作记录详细日志
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "DELETE" {
 			// 响应的内容
-			logFields = append(logFields, zap.String("Response Body", w.body.String()))
+			logFields = append(logFields, zap.String("response_body", w.body.String()))
 		}
 
 		if responStatus > 400 && responStatus <= 499 {
