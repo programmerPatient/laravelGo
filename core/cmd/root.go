@@ -2,7 +2,7 @@
  * @Description:
  * @Author: mali
  * @Date: 2022-09-05 14:01:03
- * @LastEditTime: 2022-11-08 11:17:27
+ * @LastEditTime: 2023-03-10 14:41:39
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -41,6 +41,11 @@ var rootCmd = &cobra.Command{
 		bootstrap.SetupDB()
 		// 初始化 Redis
 		bootstrap.SetupRedis()
+		//是否开启mongo连接
+		if config.GetBool("mongo.status") {
+			//初始化mongo
+			bootstrap.SetMongo()
+		}
 	},
 }
 

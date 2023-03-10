@@ -2,7 +2,7 @@
  * @Description:配置文件加载核心代码
  * @Author: mali
  * @Date: 2022-09-07 09:25:12
- * @LastEditTime: 2022-09-21 14:59:01
+ * @LastEditTime: 2023-03-10 14:42:14
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -129,6 +129,11 @@ func GetInt64(path string, defaultValue ...interface{}) int64 {
 // GetUint 获取 Uint 类型的配置信息
 func GetUint(path string, defaultValue ...interface{}) uint {
 	return cast.ToUint(internalGet(path, defaultValue...))
+}
+
+// GetUint64 获取 uint6 类型的配置信息
+func GetUint64(path string, defaultValue ...interface{}) uint64 {
+	return cast.ToUint64(internalGet(path, defaultValue...))
 }
 
 // GetBool 获取 Bool 类型的配置信息
