@@ -2,7 +2,7 @@
  * @Description:
  * @Author: mali
  * @Date: 2022-09-05 14:01:03
- * @LastEditTime: 2023-03-10 14:41:39
+ * @LastEditTime: 2023-04-17 09:22:23
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -17,6 +17,7 @@ import (
 	"github.com/laravelGo/bootstrap"
 	bsConfig "github.com/laravelGo/config"
 	"github.com/laravelGo/core/cmd/api"
+	"github.com/laravelGo/core/cmd/cron"
 	"github.com/laravelGo/core/cmd/generate"
 	"github.com/laravelGo/core/cmd/make"
 	"github.com/laravelGo/core/cmd/migrate"
@@ -69,6 +70,7 @@ func RunCmd() {
 		make.CmdMake,
 		generate.CmdGenerate,
 		queue.CmdQueue,
+		cron.CronCmd,
 	)
 	//注册自定义子命令
 	rootCmd.AddCommand(cmd.InintCmd()...)

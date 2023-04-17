@@ -76,6 +76,7 @@ func init() {
 		CmdMakeMigration,
 		CmdMakeModel,
 		CmdMakeJob,
+		CmdMakeCron,
 	)
 }
 
