@@ -2,7 +2,7 @@
  * @Description:定时任务
  * @Author: mali
  * @Date: 2023-04-14 14:19:04
- * @LastEditTime: 2023-04-17 09:20:27
+ * @LastEditTime: 2023-04-19 09:37:05
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -32,7 +32,9 @@ func runCron(cmd *cobra.Command, args []string) {
 		value := v.(BaseCron)
 		if len(args) == 0 || helper.InArray(value.GetCronName(), args) {
 			console.Success(fmt.Sprintf("定时任务：【%v】开始运行", value.GetCronName()))
-			value.GetStartDefaultRunFunc()()
+			//异步执行任务
+			go value.GetStartDefaultRunFunc()()
+
 			c.AddFunc(value.GetSpec(), value.Run())
 		}
 	}
