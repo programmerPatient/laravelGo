@@ -2,7 +2,7 @@
  * @Description:定时任务
  * @Author: mali
  * @Date: 2023-04-14 14:19:04
- * @LastEditTime: 2023-04-19 09:37:05
+ * @LastEditTime: 2023-05-24 16:38:15
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -26,7 +26,7 @@ var CronCmd = &cobra.Command{
 }
 
 func runCron(cmd *cobra.Command, args []string) {
-	workcron := work_cron.InitWorkCron()
+	workcron := work_cron.InintCron()
 	c := cron.New(cron.WithSeconds()) //精确到秒
 	for _, v := range workcron {
 		value := v.(BaseCron)

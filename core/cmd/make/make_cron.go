@@ -2,7 +2,7 @@
  * @Description:
  * @Author: mali
  * @Date: 2023-04-14 14:20:37
- * @LastEditTime: 2023-04-17 09:21:18
+ * @LastEditTime: 2023-05-24 16:40:09
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -37,5 +37,5 @@ func runMakeCron(cmd *cobra.Command, args []string) {
 	createFileFromStub(filePath, "cron", model)
 
 	// 友好提示
-	console.Success("指令文件已经生成在app/cron/ 下，请自行修改 指令名为:" + model.PackageName)
+	console.Success("指令文件已经生成在app/cron/cron_job 下，请自行修改 指令名为:" + model.PackageName)
 }

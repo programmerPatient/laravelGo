@@ -2,7 +2,7 @@
  * @Description:
  * @Author: mali
  * @Date: 2023-04-17 09:20:07
- * @LastEditTime: 2023-04-17 09:20:14
+ * @LastEditTime: 2023-05-24 16:33:13
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -10,6 +10,7 @@ package cron_job
 
 import (
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/laravelGo/core/console"
@@ -42,9 +43,20 @@ func (c *Test) GetSpec() string {
 	return "*/2 * * * * ?" //每隔 2 秒钟 执行一次任务
 }
 
+//错误捕获防止当该定时任务报错时，影响其他定时任务的执行
+func (c *Test) PanicRecover() {
+	if err := recover(); err != nil {
+		//添加自己的错误处理逻辑
+		s := string(debug.Stack())
+		fmt.Printf("err=%v, stack=%s\n", err, s)
+	}
+}
+
 //定时任务执行回调函数，替换成自己的逻辑
 func (c *Test) Run() func() {
 	return func() {
+		//错误捕获防止当该定时任务报错时，中断所有定时任务
+		defer c.PanicRecover()
 		console.Success(fmt.Sprintf("%v任务执行时间为：%v", c.GetCronName(), time.Now().Format("2006-01-02 15:04:05")))
 	}
 }
