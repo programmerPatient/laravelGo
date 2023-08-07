@@ -2,7 +2,7 @@
  * @Description:
  * @Author: mali
  * @Date: 2022-09-08 17:02:05
- * @LastEditTime: 2022-11-08 11:30:43
+ * @LastEditTime: 2023-07-31 15:16:55
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -10,165 +10,34 @@ package helper
 
 import (
 	"bytes"
+	"compress/zlib"
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
+	"io"
 	"io/ioutil"
+	"log"
+	"math"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"os"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 )
 
 // MicrosecondsStr 将 time.Duration 类型（nano seconds 为单位）
 // 输出为小数点后 3 位的 ms （microsecond 毫秒，千分之一秒）
 func MicrosecondsStr(elapsed time.Duration) string {
 	return fmt.Sprintf("%.3fms", float64(elapsed.Nanoseconds())/1e6)
-}
-
-func ArrayColumn(input map[string]map[string]interface{}, columnKey string) []interface{} {
-	columns := make([]interface{}, 0, len(input))
-	for _, val := range input {
-		if v, ok := val[columnKey]; ok {
-			columns = append(columns, v)
-		}
-	}
-	return columns
-}
-
-func InArray(needle interface{}, hystack interface{}) bool {
-	switch key := needle.(type) {
-	case string:
-		for _, item := range hystack.([]string) {
-			if key == item {
-				return true
-			}
-		}
-	case uint:
-		for _, item := range hystack.([]uint) {
-			if key == item {
-				return true
-			}
-		}
-	case uint8:
-		for _, item := range hystack.([]uint8) {
-			if key == item {
-				return true
-			}
-		}
-	case uint16:
-		for _, item := range hystack.([]uint16) {
-			if key == item {
-				return true
-			}
-		}
-	case uint32:
-		for _, item := range hystack.([]uint32) {
-			if key == item {
-				return true
-			}
-		}
-	case uint64:
-		for _, item := range hystack.([]uint64) {
-			if key == item {
-				return true
-			}
-		}
-	case int:
-		for _, item := range hystack.([]int) {
-			if key == item {
-				return true
-			}
-		}
-	case int8:
-		for _, item := range hystack.([]int8) {
-			if key == item {
-				return true
-			}
-		}
-	case int16:
-		for _, item := range hystack.([]int16) {
-			if key == item {
-				return true
-			}
-		}
-	case int32:
-		for _, item := range hystack.([]int32) {
-			if key == item {
-				return true
-			}
-		}
-	case int64:
-		for _, item := range hystack.([]int64) {
-			if key == item {
-				return true
-			}
-		}
-	case float32:
-		for _, item := range hystack.([]float32) {
-			if key == item {
-				return true
-			}
-		}
-	case float64:
-		for _, item := range hystack.([]float64) {
-			if key == item {
-				return true
-			}
-		}
-	default:
-		return false
-	}
-	return false
-}
-
-/**
- * @Author: mali
- * @Func:
- * @Description: 结构体转map
- * @Param:
- * @Return:
- * @Example:
- * @param {interface{}} in
- * @param {string} tagName 使用结构体里面指定的tag标签当map对应的key
- * @param {string} index tag标签,分割的第几个值为key
- */
-func StructToMap(in interface{}, tagName string, index ...int) (map[string]interface{}, error) {
-	out := make(map[string]interface{})
-	v := reflect.ValueOf(in)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	if v.Kind() != reflect.Struct { // 非结构体返回错误提示
-		return nil, fmt.Errorf("非结构体或结构体指针不适配; got %T", v)
-	}
-
-	t := v.Type()
-	// 遍历结构体字段
-	// 指定tagName值为map中key;字段值为map中value
-	for i := 0; i < v.NumField(); i++ {
-		fi := t.Field(i)
-		if tagValue := fi.Tag.Get(tagName); tagValue != "" {
-			tag_calue_list := strings.Split(tagValue, ",")
-			if len(index) > 0 {
-				out[tag_calue_list[index[0]]] = v.Field(i).Interface()
-			} else {
-				out[tag_calue_list[0]] = v.Field(i).Interface()
-			}
-
-		}
-	}
-	return out, nil
 }
 
 /**
@@ -204,245 +73,6 @@ func Empty(val interface{}) bool {
 	return reflect.DeepEqual(val, reflect.Zero(v.Type()).Interface())
 }
 
-func Http(method string, url string, data interface{}, headers ...map[string]string) (string, error) {
-	client := &http.Client{}
-	jsonStr, _ := json.Marshal(data)
-	req, err := http.NewRequest(method, url, bytes.NewReader(jsonStr))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Length", cast.ToString(req.ContentLength))
-	if len(headers) > 0 {
-		for key, header := range headers[0] {
-			req.Header.Set(key, header)
-		}
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	//关键的一步，去除最后的空格防止读取报错invalid header field name
-	body_string := strings.TrimSpace(string(body))
-	return body_string, nil
-}
-
-func HttpsPostForm(url string, data url.Values) (string, error) {
-	resp, err := http.PostForm(url, data)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
-}
-
-/**
- * @Author: mali
- * @Func:
- * @Description: 秒数转化为分秒字符串
- * @Param:
- * @Return:
- * @Example:
- * @param {int64} se
- */
-func SecondToMsString(se int64) string {
-	if se > 60 {
-		min := se / 60
-		second := se % 60
-		return fmt.Sprintf("%v分%v秒", min, second)
-	} else {
-		return fmt.Sprintf("%v秒", se)
-	}
-}
-
-/**
- * len(indexKey) > 0 将切片类型的结构体，转成 map 输出，输出结果存在了 desk 中，也就是你的第一个参数
- * len(indexKey) == 0 将切片类型的结构体，转成 slice 输出，输出结果存在了 desk 中，也就是你的第一个参数
- *
- * @demo 假如有下述结构体，
- * type User struct {
- *  ID   int
- *  NAME string
- * }
- * 输入：
- * @params desk &map[int64]User   desk是个指针呦！！！
- * @params input []User{User{ID:1, NAME:"zwk"}, User{ID:2, NAME:"zzz"}}
- * @params indexKey 键名 "ID" 只支持的索引类型为 (unint unint8 unint16 unint32 unint64 int int8 int16 int32 int64 float32 float64)
- * @params columnKey 列名 空字符串代表返回整个结构体，反之返回结构体中的某一列
- *
- * 输出：
- * err 错误信息
- * 入参 desk 已经被赋值：map[int]User{1:User{ID:1, NAME:"zwk"}, 2:User{ID:2, NAME:"zzz"}}
- *
- * 输入：
- * @params desk &[]int   desk是个指针呦！！！
- * @params input []User{User{ID:1, NAME:"zwk"}, User{ID:2, NAME:"zzz"}}
- * @params indexKey 键名 ""
- * @params columnKey 列名
- *
- * 输出：
- * err 错误信息
- * 入参 desk 已经被赋值：[]int{1, 2}
- */
-
-func StructColumn(desk, input interface{}, columnKey, indexKey string) (err error) {
-	structIndexColumn := func(desk, input interface{}, columnKey, indexKey string) (err error) {
-		findStructValByIndexKey := func(curVal reflect.Value, elemType reflect.Type, indexKey, columnKey string) (indexVal, columnVal reflect.Value, err error) {
-			indexExist := false
-			columnExist := false
-			for i := 0; i < elemType.NumField(); i++ {
-				curField := curVal.Field(i)
-				if elemType.Field(i).Name == indexKey {
-					switch curField.Kind() {
-					case reflect.String, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int, reflect.Float64, reflect.Float32:
-						indexExist = true
-						indexVal = curField
-					case reflect.Struct:
-
-					default:
-						return indexVal, columnVal, fmt.Errorf("indexKey must be unint int float or string")
-					}
-				}
-				if elemType.Field(i).Name == columnKey {
-					columnExist = true
-					columnVal = curField
-					continue
-				}
-			}
-			if !indexExist {
-				return indexVal, columnVal, fmt.Errorf("indexKey %s not found in %s's field", indexKey, elemType)
-			}
-			if len(columnKey) > 0 && !columnExist {
-				return indexVal, columnVal, fmt.Errorf("columnKey %s not found in %s's field", columnKey, elemType)
-			}
-			return
-		}
-		deskValue := reflect.ValueOf(desk)
-		if deskValue.Elem().Kind() != reflect.Map {
-			return fmt.Errorf("desk must be map")
-		}
-		deskElem := deskValue.Type().Elem()
-		if len(columnKey) == 0 && deskElem.Elem().Kind() != reflect.Struct {
-			return fmt.Errorf("desk's elem expect struct, got %s", deskElem.Elem().Kind())
-		}
-
-		rv := reflect.ValueOf(input)
-		rt := reflect.TypeOf(input)
-		elemType := rt.Elem()
-
-		var indexVal, columnVal reflect.Value
-		direct := reflect.Indirect(deskValue)
-		mapReflect := reflect.MakeMap(deskElem)
-		deskKey := deskValue.Type().Elem().Key()
-		for i := 0; i < rv.Len(); i++ {
-			curVal := rv.Index(i)
-			indexVal, columnVal, err = findStructValByIndexKey(curVal, elemType, indexKey, columnKey)
-
-			if err != nil {
-				return
-			}
-			if deskKey.Kind() != indexVal.Kind() {
-				return fmt.Errorf("cant't convert %s to %s, your map'key must be %s", indexVal.Kind(), deskKey.Kind(), indexVal.Kind())
-			}
-			if len(columnKey) == 0 {
-				mapReflect.SetMapIndex(indexVal, curVal)
-				direct.Set(mapReflect)
-			} else {
-				if deskElem.Elem().Kind() != columnVal.Kind() {
-					return fmt.Errorf("your map must be map[%s]%s", indexVal.Kind(), columnVal.Kind())
-				}
-				mapReflect.SetMapIndex(indexVal, columnVal)
-				direct.Set(mapReflect)
-			}
-		}
-		return
-	}
-
-	structColumn := func(desk, input interface{}, columnKey string) (err error) {
-		findStructValByColumnKey := func(curVal reflect.Value, elemType reflect.Type, columnKey string) (columnVal reflect.Value, err error) {
-			columnExist := false
-			for i := 0; i < elemType.NumField(); i++ {
-				curField := curVal.Field(i)
-				if elemType.Field(i).Name == columnKey {
-					columnExist = true
-					columnVal = curField
-					continue
-				}
-			}
-			if !columnExist {
-				return columnVal, fmt.Errorf("columnKey %s not found in %s's field", columnKey, elemType)
-			}
-			return
-		}
-
-		if len(columnKey) == 0 {
-			return fmt.Errorf("columnKey cannot not be empty")
-		}
-
-		deskElemType := reflect.TypeOf(desk).Elem()
-		if deskElemType.Kind() != reflect.Slice {
-			return fmt.Errorf("desk must be slice")
-		}
-
-		rv := reflect.ValueOf(input)
-		rt := reflect.TypeOf(input)
-
-		var columnVal reflect.Value
-		deskValue := reflect.ValueOf(desk)
-		direct := reflect.Indirect(deskValue)
-
-		for i := 0; i < rv.Len(); i++ {
-			columnVal, err = findStructValByColumnKey(rv.Index(i), rt.Elem(), columnKey)
-			if err != nil {
-				return
-			}
-			if deskElemType.Elem().Kind() != columnVal.Kind() {
-				return fmt.Errorf("your slice must be []%s", columnVal.Kind())
-			}
-
-			direct.Set(reflect.Append(direct, columnVal))
-		}
-		return
-	}
-
-	deskValue := reflect.ValueOf(desk)
-	if deskValue.Kind() != reflect.Ptr {
-		return fmt.Errorf("desk must be ptr")
-	}
-
-	rv := reflect.ValueOf(input)
-	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-		return fmt.Errorf("input must be map slice or array")
-	}
-
-	rt := reflect.TypeOf(input)
-	if rt.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("input's elem must be struct")
-	}
-
-	if len(indexKey) > 0 {
-		return structIndexColumn(desk, input, columnKey, indexKey)
-	}
-	return structColumn(desk, input, columnKey)
-}
-
-func HttpBuildQuery(params map[string]string) (param_str string) {
-	params_arr := make([]string, 0, len(params))
-	for k, v := range params {
-		params_arr = append(params_arr, fmt.Sprintf("%s=%s", k, v))
-	}
-	param_str = strings.Join(params_arr, "&")
-	return param_str
-}
-
 func MD5(str string) string {
 	data := []byte(str) //切片
 	has := md5.Sum(data)
@@ -463,6 +93,32 @@ func ReadImgData(url string) image.Image {
 		return nil
 	}
 	return img
+}
+
+// 下载图片信息
+func DownLoadImage(url string, base string) (string, error) {
+
+	pic := base
+	idx := strings.LastIndex(url, "/")
+	if idx < 0 {
+		pic += "/" + url
+	} else {
+		pic += url[idx+1:]
+	}
+	v, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer v.Body.Close()
+	content, err := ioutil.ReadAll(v.Body)
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(pic, content, 0666)
+	if err != nil {
+		return "", err
+	}
+	return pic, nil
 }
 
 //保存图片
@@ -495,37 +151,39 @@ func PostJson(ctx *gin.Context, obj interface{}) error {
 	return nil
 }
 
-/**
- * @Author: mali
- * @Func:
- * @Description: 随机长度的数字字符串
- * @Param:
- * @Return:
- * @Example:
- * @param {string} length
- */
-func RandString(length int) string {
-	var n int32 = 1
-	for i := 0; i < length; i++ {
-		n *= 10
+//PostJson 获取post 固定key的参数json参数
+func PostJsonOnly(ctx *gin.Context, obj *map[string]interface{}, field []string) error {
+	body, err := ioutil.ReadAll(ctx.Request.Body)
+	if err != nil {
+		return err
 	}
-	return fmt.Sprintf("%0"+cast.ToString(length)+"v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(n))
+	res := map[string]interface{}{}
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return err
+	}
+	for k, v := range res {
+		if InArray(k, field) {
+			(*obj)[k] = v
+		}
+	}
+	return nil
 }
 
 /**
-  * @Author: mali
-  * @Func:
-  * @Description: stirng map合并
-  * @Param:
-  * @Return:
-  * @Example:
-  *      {
-			 a:map[string]string{"1": "110", "2":"120", "3":"119"}
-			 b:map[string]string{"1": "111", "2":"122", "4":"129"}
-			 return:map["1":111 "2":122 "3":119 "4":129]
-		  }
-  * @param {map[string]interface{}} a
-  * @param {map[string]interface{}} b
+ * @Author: mali
+ * @Func:
+ * @Description: stirng map合并
+ * @Param:
+ * @Return:
+ * @Example:
+ *      {
+			a:map[string]string{"1": "110", "2":"120", "3":"119"}
+			b:map[string]string{"1": "111", "2":"122", "4":"129"}
+			return:map["1":111 "2":122 "3":119 "4":129]
+ 		}
+ * @param {map[string]interface{}} a
+ * @param {map[string]interface{}} b
 */
 func StringMapMerge(a map[string]interface{}, b map[string]interface{}) map[string]interface{} {
 	n := make(map[string]interface{})
@@ -575,4 +233,174 @@ func Sha1(s string) string {
 	bs := h.Sum(nil)
 	//SHA1 值经常以 16 进制输出，使用%x 来将散列结果格式化为 16 进制字符串。
 	return fmt.Sprintf("%x", bs)
+}
+
+/**
+ * @Author: mali
+ * @Func:
+ * @Description: 十进制转化为2、8、16进制
+ * @Param:
+ * @Return:
+ * @Example:
+ * @param {*} n
+ * @param {int} num
+ */
+func DecConvertToX(n int, num int) (string, error) {
+	if n < 0 {
+		return strconv.Itoa(n), errors.New("只支持正整数")
+	}
+	if num != 2 && num != 8 && num != 16 {
+		return strconv.Itoa(n), errors.New("只支持二、八、十六进制的转换")
+	}
+	result := ""
+	h := map[int]string{
+		0:  "0",
+		1:  "1",
+		2:  "2",
+		3:  "3",
+		4:  "4",
+		5:  "5",
+		6:  "6",
+		7:  "7",
+		8:  "8",
+		9:  "9",
+		10: "A",
+		11: "B",
+		12: "C",
+		13: "D",
+		14: "E",
+		15: "F",
+	}
+	for ; n > 0; n /= num {
+		lsb := h[n%num]
+		result = lsb + result
+	}
+	return result, nil
+}
+
+/**
+ * @Author: mali
+ * @Func:
+ * @Description: 获取唯一的id
+ * @Param:
+ * @Return:
+ * @Example:
+ */
+func GetUuid() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	uuid := fmt.Sprintf("%x-%x-%x-%x-%x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return uuid
+}
+
+/**
+ * @Author: mali
+ * @Func:
+ * @Description: 四舍五入保留固定位子小数
+ * @Param:
+ * @Return:
+ * @Example:
+ * @param {float64} val
+ * @param {int} precision
+ */
+func Round(val float64, precision int) float64 {
+	p := math.Pow10(precision)
+	return math.Floor(val*p+0.5) / p
+}
+
+// CheckSignature 微信公众号签名检查
+func CheckSignature(signature, timestamp, nonce, token string) bool {
+	arr := []string{timestamp, nonce, token}
+	// 字典序排序
+	sort.Strings(arr)
+
+	n := len(timestamp) + len(nonce) + len(token)
+	var b strings.Builder
+	b.Grow(n)
+	for i := 0; i < len(arr); i++ {
+		b.WriteString(arr[i])
+	}
+
+	return Sha1(b.String()) == signature
+}
+
+//进行zlib压缩
+func DoZlibCompress(src []byte) []byte {
+	var in bytes.Buffer
+	w := zlib.NewWriter(&in)
+	w.Write(src)
+	w.Close()
+	return in.Bytes()
+}
+
+//进行zlib解压缩
+func DoZlibUnCompress(compressSrc []byte) []byte {
+	b := bytes.NewReader(compressSrc)
+	var out bytes.Buffer
+	r, _ := zlib.NewReader(b)
+	io.Copy(&out, r)
+	return out.Bytes()
+}
+
+/**
+ * @Author: mali
+ * @Func:
+ * @Description: 判断是否为数字类型
+ * @Param:
+ * @Return:
+ * @Example:
+ * @param {interface{}} val
+ */
+func IsNumeric(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+	case float32, float64, complex64, complex128:
+		return true
+	case string:
+		str := val.(string)
+		if str == "" {
+			return false
+		}
+		// Trim any whitespace
+		str = strings.TrimSpace(str)
+		if str[0] == '-' || str[0] == '+' {
+			if len(str) == 1 {
+				return false
+			}
+			str = str[1:]
+		}
+		// hex
+		if len(str) > 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') {
+			for _, h := range str[2:] {
+				if !((h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F')) {
+					return false
+				}
+			}
+			return true
+		}
+		// 0-9,Point,Scientific
+		p, s, l := 0, 0, len(str)
+		for i, v := range str {
+			if v == '.' { // Point
+				if p > 0 || s > 0 || i+1 == l {
+					return false
+				}
+				p = i
+			} else if v == 'e' || v == 'E' { // Scientific
+				if i == 0 || s > 0 || i+1 == l {
+					return false
+				}
+				s = i
+			} else if v < '0' || v > '9' {
+				return false
+			}
+		}
+		return true
+	}
+
+	return false
 }
