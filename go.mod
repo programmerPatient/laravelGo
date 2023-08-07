@@ -3,6 +3,7 @@ module github.com/laravelGo
 go 1.18
 
 require (
+	github.com/aliyun/aliyun-oss-go-sdk v2.2.8+incompatible
 	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/gin-gonic/gin v1.8.1
@@ -13,6 +14,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/shamsher31/goimgtype v1.0.0
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.5.0
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a
@@ -59,6 +61,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/shamsher31/goimgext v1.0.0 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
