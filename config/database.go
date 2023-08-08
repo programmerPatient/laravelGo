@@ -2,7 +2,7 @@
  * @Description:
  * @Author: mali
  * @Date: 2022-09-08 10:11:07
- * @LastEditTime: 2022-11-08 11:14:01
+ * @LastEditTime: 2023-08-08 13:49:18
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -37,6 +37,36 @@ func init() {
 				"username": config.Env("MYSQL_USERNAME", ""),
 				"password": config.Env("MYSQL_PASSWORD", ""),
 				"charset":  "utf8mb4",
+			},
+		}
+	})
+
+	//其他数据库的连接
+	config.AddConfig("other_database", func() map[string]interface{} {
+		return map[string]interface{}{
+			//示例数据库连接
+			"gpt_database": map[string]interface{}{
+				//数据库类型 支持 mysql
+				"connection": "mysql",
+				//慢日志的记录的起始时间 单位毫秒
+				"slow_sql_min_time": 200,
+				/**连接池配置***/
+				//设置最大空闲连接数
+				"max_idle_connections": 1,
+				//设置最大连接数
+				"max_open_connections": 2,
+				//设置每个链接的过期时间
+				"max_life_seconds": 5 * 60,
+				//mysql配置
+				"mysql": map[string]interface{}{
+					// 数据库连接信息
+					"host":     "",
+					"port":     3306,
+					"database": "",
+					"username": "",
+					"password": "",
+					"charset":  "",
+				},
 			},
 		}
 	})
