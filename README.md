@@ -1,6 +1,6 @@
 # License
 
-GoLaravel 框架是根据 [MIT 许可证](https://opensource.org/licenses/MIT) 授权的开源软件。
+laravelGo 框架是根据 [MIT 许可证](https://opensource.org/licenses/MIT) 授权的开源软件。
 
 # 1.运行配置
 
