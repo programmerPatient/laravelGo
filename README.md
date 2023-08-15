@@ -1,11 +1,7 @@
-<!--
- * @Description: 
- * @Author: mali
- * @Date: 2022-09-16 17:27:03
- * @LastEditTime: 2022-11-08 11:28:11
- * @LastEditors: VSCode
- * @Reference: 
--->
+# License
+
+GoLaravel 框架是根据 [MIT 许可证](https://opensource.org/licenses/MIT) 授权的开源软件。
+
 # 1.运行配置
 
 - ## 拉取代码库并安依赖包
