@@ -10,6 +10,7 @@ package cron
 
 import (
 	"fmt"
+	"sync"
 
 	work_cron "github.com/laravelGo/app/cron"
 	"github.com/laravelGo/app/helper"
@@ -28,14 +29,32 @@ var CronCmd = &cobra.Command{
 func runCron(cmd *cobra.Command, args []string) {
 	workcron := work_cron.InintCron()
 	c := cron.New(cron.WithSeconds()) //精确到秒
+	var id_map_name sync.Map          //缓存每个定时任务对应的id,防止并发读写问题
 	for _, v := range workcron {
 		value := v.(BaseCron)
 		if len(args) == 0 || helper.InArray(value.GetCronName(), args) {
 			console.Success(fmt.Sprintf("定时任务：【%v】开始运行", value.GetCronName()))
-			//异步执行任务
+			value.InitServer()
 			go value.GetStartDefaultRunFunc()()
-
-			c.AddFunc(value.GetSpec(), value.Run())
+			cron_id, err := c.AddFunc(value.GetSpec(), func() {
+				defer func() {
+					if err := recover(); err != nil {
+						console.Error(fmt.Sprintf("定时任务【%v】运行错误:%v", value.GetCronName(), err))
+						value.PanicRecover(err)
+						//移除定时任务
+						id, ok := id_map_name.Load(value.GetCronName())
+						if ok {
+							c.Remove(id.(cron.EntryID))
+						}
+					}
+				}()
+				value.Run()()
+			})
+			if err != nil {
+				console.Error(fmt.Sprintf("定时任务【%v】添加失败:%v", value.GetCronName(), err))
+				continue
+			}
+			id_map_name.Store(value.GetCronName(), cron_id)
 		}
 	}
 	c.Start()

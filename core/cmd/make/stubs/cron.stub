@@ -22,13 +22,15 @@ func (c *{{StructName}}) GetStartDefaultRunFunc() func() {
 	}
 }
 
+// 初始化配置信息
+func (c *{{StructName}}) InitServer() {
+}
+
 //错误捕获防止当该定时任务报错时，影响其他定时任务的执行
-func (c *{{StructName}}) PanicRecover() {
-	if err := recover(); err != nil {
+func (c *{{StructName}}) PanicRecover(err interface{}) {
 		//添加自己的错误处理逻辑
 		s := string(debug.Stack())
 		fmt.Printf("err=%v, stack=%s\n", err, s)
-	}
 }
 
 //定时任务执行规则，自行修改
@@ -39,8 +41,6 @@ func (c *{{StructName}}) GetSpec() string {
 //定时任务执行回调函数，替换成自己的逻辑
 func (c *{{StructName}}) Run() func()  {
 	return func(){
-		//错误捕获防止当该定时任务报错时，中断所有定时任务
-		defer c.PanicRecover()
 		console.Success("定时任务执行开始！！！")
 		console.Success("这是一个定时任务")
 		//pass 
