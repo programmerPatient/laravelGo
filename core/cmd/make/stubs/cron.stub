@@ -16,10 +16,8 @@ func (c *{{StructName}}) GetCronName() string {
 	return "{{PackageName}}"
 }
 //默认每次启动命令是立即开始执行的函数
-func (c *{{StructName}}) GetStartDefaultRunFunc() func() {
-	return func() {
-		
-	}
+func (c *{{StructName}}) GetStartDefaultRunFunc() {
+	
 }
 
 // 初始化配置信息
@@ -39,11 +37,9 @@ func (c *{{StructName}}) GetSpec() string {
 }
 
 //定时任务执行回调函数，替换成自己的逻辑
-func (c *{{StructName}}) Run() func()  {
-	return func(){
-		console.Success("定时任务执行开始！！！")
-		console.Success("这是一个定时任务")
-		//pass 
-		console.Success("定时任务执行结束！！！")
-	}
+func (c *{{StructName}}) Run()  {
+	console.Success("定时任务执行开始！！！")
+	console.Success("这是一个定时任务")
+	//pass 
+	console.Success("定时任务执行结束！！！")
 }

@@ -2,7 +2,7 @@
  * @Description:定时任务
  * @Author: mali
  * @Date: 2023-04-14 14:19:04
- * @LastEditTime: 2023-05-24 16:38:15
+ * @LastEditTime: 2023-10-09 13:32:04
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -35,7 +35,7 @@ func runCron(cmd *cobra.Command, args []string) {
 		if len(args) == 0 || helper.InArray(value.GetCronName(), args) {
 			console.Success(fmt.Sprintf("定时任务：【%v】开始运行", value.GetCronName()))
 			value.InitServer()
-			go value.GetStartDefaultRunFunc()()
+			go value.GetStartDefaultRunFunc()
 			cron_id, err := c.AddFunc(value.GetSpec(), func() {
 				defer func() {
 					if err := recover(); err != nil {
@@ -48,7 +48,7 @@ func runCron(cmd *cobra.Command, args []string) {
 						}
 					}
 				}()
-				value.Run()()
+				value.Run()
 			})
 			if err != nil {
 				console.Error(fmt.Sprintf("定时任务【%v】添加失败:%v", value.GetCronName(), err))
