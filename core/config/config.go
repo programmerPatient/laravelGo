@@ -2,7 +2,7 @@
  * @Description:配置文件加载核心代码
  * @Author: mali
  * @Date: 2022-09-07 09:25:12
- * @LastEditTime: 2023-03-10 14:42:14
+ * @LastEditTime: 2023-11-28 15:08:43
  * @LastEditors: VSCode
  * @Reference:
  */
@@ -82,19 +82,19 @@ func Env(name string, defaultValue ...interface{}) interface{} {
 	return internalGet(name, defaultValue...)
 }
 
-//加载config
+// 加载config
 func loadConfig() {
 	for name, fn := range ConfigFuncs {
 		viper.Set(name, fn())
 	}
 }
 
-//添加配置信息
+// 添加配置信息
 func AddConfig(name string, configFn ConfigFunc) {
 	ConfigFuncs[name] = configFn
 }
 
-//获取配置
+// 获取配置
 func internalGet(path string, defaultValue ...interface{}) interface{} {
 	// config 或者环境变量不存在的情况
 	if !viper.IsSet(path) || helper.Empty(viper.Get(path)) {
@@ -154,4 +154,9 @@ func GetStringMapInt(path string) map[string]int {
 		return_data[k] = cast.ToInt(v)
 	}
 	return return_data
+}
+
+// GetStringSlice 获取切片 类型的配置信息
+func GetStringSlice(path string, defaultValue ...interface{}) []string {
+	return cast.ToStringSlice(internalGet(path, defaultValue...))
 }
